@@ -1,0 +1,58 @@
+
+4 bit OP CODE     |3BIT DEST          |3 BIT SRC 1        |3 BIT SRC 2         |3 BIT IMMEDIATE |
+__________________|___________________|___________________|____________________|________________|___________________
+0000 - NO OP      |ALL ZEROES         |                   |                    |                |
+0001 - ALU        |3bit write address |3 bit read address | 3 bit read address | 3 bit function | //add sub nor and xnor rshft cmp\\   example asm code: add, rx,rx,rx; sub, rx,rx,rx; nor, rx,rx,rx; and, rx,rx,rx; xnor, rx,rx,rx; rshft, r0,rx; cmp, r0, rx,rx
+0010 - BRANCH     |
+0011 - LIMM       |
+0100 - READ RAM   |
+0101 - WRITE RAM  |
+0110 - DISPLAY    |
+
+
+rx denotes any register 1-7
+
+ALU INSTRUCTIONS
+add
+sub
+nor
+and
+xnor
+rshft
+cmp
+
+format
+add rx rx rx
+sub rx rx rx
+nor rx rx rx
+and rx rx rx
+xnor rx rx rx
+rshft rx
+cmp rx rx
+
+BRANCH INSTRUCTIONS: 2 FORMATS
+IMMEDIATE
+bgt immediate(can be hex,dec,or bin format)
+beq immediate(can be hex,dec,or bin format)
+blt immediate(can be hex,dec,or bin format)
+POINTER
+bgt rx
+beq rx
+blt rx
+
+LOAD IMMEDIATE
+limm rx immediate(can be hex, dec, or bin format)
+
+READ RAM: 2 FORMATS
+IMMEDIATE
+rram rx immediate(can be hex, dec, or bin format) // rx is where the contents of the ram address at the immediate value are stored
+POINTER
+rram rx rx //first rx loads the value pointed to in ram by the second rx
+
+WRITE RAM: 2 FORMATS
+IMMEDIATE
+wram rx immediate(can be hex, dec, or bin format) // the value in rx is written to the ram address of the immediate value
+wram rx rx // the value in the first rx is written to the ram address pointed to by the second rx
+
+DISPLAY// rx is x coordinate, ry is y coordinate)
+disp rx ry
