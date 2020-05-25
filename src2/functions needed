@@ -1,0 +1,30 @@
+uint(bit width, 0d-value)
+ returns the decimal number of the binary truncated value
+
+ for instance
+
+out = sint(8, -105), out = 151, which converted to binary makes 10010111
+ if  > 2^bw
+    throw err
+
+
+"{0:b}".format(37) returns '100101'
+
+signed 16 bit range : -32768 to +32767
+-(2^(16-1)) to (2^16-1) - 1
+
+signed 08 bit range : -128   to   +127
+
+
+def uint(bw, val):
+    if val < -2**(bw - 1) checking if its too negative
+        print("error1: val under" bw " bit range")
+    elif val > (2**bw) - 1)
+        print("error2: val over" bw " bit range")
+    return 0
+
+------------------------------
+sint(8, -105)
+
+if val < 0:
+val += (2**bw) is ==  val = !val + 1
