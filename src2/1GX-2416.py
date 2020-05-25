@@ -406,6 +406,8 @@ def asmtoint(asm):
             imm = convert_to_int(args[2])
         else:
             rs2 = registers[args[2]]
+    else:
+        return None
 
 #-----------------------------------------------------------------------------------------------------#
     #else:
@@ -440,7 +442,10 @@ with open(output_filename, 'w') as output_file:
   output_buffer = []
 
   for line in asm_code:
-      output_buffer.append(asmtoint(line))
+      lineoutput = asmtoint(line)
+      if lineoutput:
+          output_buffer.append(lineoutput)
+
   
   output_file.write('\n'.join(output_buffer))
 
