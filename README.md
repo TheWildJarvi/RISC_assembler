@@ -9,7 +9,7 @@ AUTHORS:
 
 Use any python ide like pycharm or repl.it to run it. You can easily change the way it works for your own risc ISA. You can chage the amount of arguments per instruction, and how large they should be.
 
-This is designed for a 24bit instruction word stored in PROM where each instruction is fetched in a single cycle. It is deisgned for a 16 bit Data loop. 
+This is designed for a 24bit instruction word stored in PROM where each instruction is fetched in a single cycle. It is designed for a 16 bit Data loop. 
 
 
 ### It is currently not finished for my new ISA but works with my old one
