@@ -9,6 +9,32 @@ import re
 import argparse
 import os
 
+output_choices = ['bin', 'lst']
+
+#handles the input arg
+parser = argparse.ArgumentParser(description='Assemble code')
+parser.add_argument('-i', '--input', type=argparse.FileType('r'), help='Input assembly file')
+parser.add_argument('-f', '--output-format', type=str, choices=output_choices, help='Input assembly file')
+
+args = parser.parse_args()
+
+input_file = args.input
+output_format = args.output_format
+
+
+#if no input arg, ask for one
+if not input_file:
+  filename = raw_input('Input file? ')
+  input_file = open(filename)
+
+while not output_format:
+  user_input = raw_input('Output format? Allowed format are {} '.format(output_choices))
+  if user_input not in output_choices:
+    print 'Invalid input, allowed is {}'.format(output_choices)
+    continue
+  else:
+    output_format = user_input
+    break
 
 #  pseudo ops
 # lim
@@ -416,47 +442,43 @@ def asmtoint(asm):
         else:
             rs2 = registers[args[2]]
     else:
-        return None
-
+      # It's a comment, not an instruction
+      return None, None, asm
 #-----------------------------------------------------------------------------------------------------#
     #else:
     #    return 0,0,0,0,0
     #(opcode, rd, rs1, rs2, imm )
-    print  xlen(4, opcode, 0),  xlen(4, rd, 0),  xlen(4, rs1, 0),  xlen(4, rs2, 0),  xlen(8, imm, 0)
-    print  xlen(4, opcode, 0) + xlen(4, rd, 0) + xlen(4, rs1, 0) + xlen(4, rs2, 0) + xlen(8, imm, 0)
-    return xlen(4, opcode, 0) + xlen(4, rd, 0) + xlen(4, rs1, 0) + xlen(4, rs2, 0) + xlen(8, imm, 0)
+    binary_instructions = [xlen(4, opcode, 0), xlen(4, rd, 0), xlen(4, rs1, 0), xlen(4, rs2, 0), xlen(8, imm, 0)]
+    return ''.join(binary_instructions), binary_instructions, asm
 
 #-----------------------------------------------------------------------------------------------------#
 
-#handles the input arg
-parser = argparse.ArgumentParser(description='Assemble code')
-parser.add_argument('-input', type=argparse.FileType('r'), help='Input assembly file')
-
-args = parser.parse_args()
-
-input_file = args.input
-
-#if no input arg, ask for one
-if not input_file:
-  filename = raw_input('Input file? ')
-  input_file = open(filename)
-
-output_filename = os.path.splitext(input_file.name)[0] + '.bin'
+output_filename = os.path.splitext(input_file.name)[0] + '.' + output_format
 
 with open(output_filename, 'w') as output_file:
   out = []
 
-  asm_code = read_file(input_file)  # STICK PATH HERE AS STRING LIKE SO  -> 'file.asm'
+  asm_code = read_file(input_file)
 
   output_buffer = []
 
   for line in asm_code:
-      lineoutput = asmtoint(line)
-      if lineoutput:
-          output_buffer.append(lineoutput)
+      instructions, instuctions_list, asm = asmtoint(line)
 
+      lst = asm
+
+      if instuctions_list:
+        lst = asm + ' -> ' + ' '.join(instuctions_list) + ' -> ' + ''.join(instuctions_list)
+
+      if output_format == 'bin' and instructions:
+        output_buffer.append(instructions)
+      elif output_format == 'lst':
+        output_buffer.append(lst)
+
+  string_buffer = '\n'.join(output_buffer)
   
-  output_file.write('\n'.join(output_buffer))
+  output_file.write(string_buffer)
+  print string_buffer
 
 
 #------------------------------------------------------------------------------------------------------#
