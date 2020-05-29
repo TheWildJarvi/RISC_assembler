@@ -4,7 +4,6 @@
 #Lululombard#
 
 
-
 import re
 import argparse
 import os
@@ -36,11 +35,6 @@ while not output_format:
     output_format = user_input
     break
 
-#  pseudo ops
-# lim
-# nop
-# unconditional branch
-
 def read_file(f):
     s = []
     s = f.read().splitlines()
@@ -51,12 +45,6 @@ def convert(a, base=4):
     if a < 0:
         a = a & pow(2,base)-1
     return format(a, '0' + repr(base) + 'b')
-
-#def print_asm(decimal_values):
-#    for input in decimal_values:
-#        for index, element in enumerate(input):
-#            print(convert(element, 4 if index < 4 else 8 ), end=' ')
-#    print()
 
 def convert_to_int(s): #takes a signed immediate and converts it to int(ex, -0xff = -255)
     neg = 1
@@ -119,15 +107,15 @@ registers = {
 
 def asmtoint(asm):
 
+    if not asm:
+        return '',[], asm
+
     asm_split = re.split(" |, |\(|\)", asm)
     args = []
     i=0
     for i in range (len(asm_split)):
         if (asm_split[i] != ""):
             args.append(asm_split[i])
-    #print (args)
-    #print args[0]
-    #print args[3]
     if not len(args):
         return
     opcode = 0
@@ -136,11 +124,10 @@ def asmtoint(asm):
     rs2 = 0
     imm = 0
 
-
-
 #--------------------------------------------------------------------
 # ARITHMETIC AND LOGIC INSTRUCTIONS
 #--------------------------------------------------------------------
+
     if (args[0] == "add"):
         if (len(args) != 4):
             return 0, 0, 0, 0, 0
@@ -148,9 +135,11 @@ def asmtoint(asm):
         rd = registers[args[1]]
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x","0d","0b"]: #check if second source is an IMM
-            imm = convert_to_int(args[3])   #
+            imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "addv"): #no immediate used for add vector
         if (len(args) != 4):
@@ -159,6 +148,7 @@ def asmtoint(asm):
         rd = registers[args[1]]
         rs1 = registers[args[2]]
         rs2 = registers[args[3]]
+        imm = 0
 
     elif (args[0] == "adc"):
         if (len(args) != 4):
@@ -168,8 +158,10 @@ def asmtoint(asm):
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x", "0d", "0b"]:
             imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "sub"):
         if (len(args) != 4):
@@ -179,8 +171,10 @@ def asmtoint(asm):
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x", "0d", "0b"]:
             imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "nor"):
         if (len(args) != 4):
@@ -190,8 +184,10 @@ def asmtoint(asm):
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x", "0d", "0b"]:
             imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "and"):
         if (len(args) != 4):
@@ -201,8 +197,10 @@ def asmtoint(asm):
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x", "0d", "0b"]:
             imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "xor"):
         if (len(args) != 4):
@@ -212,18 +210,19 @@ def asmtoint(asm):
         rs1 = registers[args[2]]
         if args[3][:2] in ["0x","0d","0b"]:
             imm = convert_to_int(args[3])
+            rs2 = 0
         else:
             rs2 = registers[args[3]]
+            imm = 0
 
     elif (args[0] == "abs"):
         if (len(args) != 3):
             return 0, 0, 0, 0, 0
         opcode = 7
         rd = registers[args[1]]
-        if args[3][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[3])
-        else:
-            rs2 = registers[args[3]]
+        rs1 = 0
+        rs2 = registers[args[2]]
+        imm = 0
 
     elif (args[0] == "limm"): #IMM is 16 bits, top byte goes into rs1,rs2, and low byte goes into imm
         if (len(args) != 3):
@@ -235,215 +234,130 @@ def asmtoint(asm):
         rs2 = (convert_to_int(args[2]) >> 8) & 0x0f #grab low nib
         imm = convert_to_int(args[2]) & 0xff  #grab low byte
 
-
-
-
-# --------------------------------------------------------------------
-# ABSOLUTE BRANCH INSTRUCTIONS
-# --------------------------------------------------------------------
-    elif (args[0] == "beq"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 0
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "bneq"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 2
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "bgt"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 4
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "bgte"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 6
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "blt"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 8
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "blte"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 10
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-# --------------------------------------------------------------------
-# RELATIVE BRANCH INSTRUCTIONS
-# --------------------------------------------------------------------
-    elif (args[0] == "breq"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 1
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "brneq"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 3
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "brgt"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 5
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "brgte"):
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 7
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "brlt"): #branch relative less than
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 9
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-    elif (args[0] == "brlte"): #branch relative less than or equal
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 9
-        rd = 11
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-# --------------------------------------------------------------------
-# ABSOLUTE JUMP AND LINK INSTRUCTIONS
-# --------------------------------------------------------------------
-    elif (args[0] == "jal"): #jump and link
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 10
-        rd = 0
-        if args[1][:2] in ["0x","0d","0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-# --------------------------------------------------------------------
-# RELATIVE JUMP AND LINK INSTRUCTIONS
-# --------------------------------------------------------------------
-
-    elif (args[0] == "jral"): #jump relative and link
-        if (len(args) != 2):
-            return 0, 0, 0, 0, 0
-        opcode = 10
-        rd = 1
-        if args[1][:2] in ["0x", "0d", "0b"]:
-            imm = convert_to_int(args[1])
-        else:
-            rs2 = registers[args[1]]
-
-# --------------------------------------------------------------------
-# ABSOLUTE JUMP AND LINK REGISTER INSTRUCTIONS
-# --------------------------------------------------------------------
-    elif (args[0] == "jalr"): #jump and  link register
+    elif (args[0] == "rshft"):
         if (len(args) != 3):
             return 0, 0, 0, 0, 0
-        opcode = 10
-        rd = 8
-        rs1 = registers[args[1]]
-        if args[2][:2] in ["0x", "0d", "0b"]:
-            imm = convert_to_int(args[2])
-        else:
-            rs2 = registers[args[2]]
-
-# --------------------------------------------------------------------
-# RELATIVE JUMP AND LINK REGISTER INSTRUCTIONS
-# --------------------------------------------------------------------
-    elif (args[0] == "jralr"): #jump relative and  link register
-        if (len(args) != 3):
-            return 0, 0, 0, 0, 0
-        opcode = 10
-        rd = 9
-        rs1 = registers[args[1]]
-        if args[2][:2] in ["0x", "0d", "0b"]:
-            imm = convert_to_int(args[2])
-        else:
-            rs2 = registers[args[2]]
-# --------------------------------------------------------------------
-# LOAD / STORE INSTRUCTIONS
-# --------------------------------------------------------------------
-
-    elif (args[0] == "ld"):
-        if (len(args) != 3):
-            return 0, 0, 0, 0, 0
-        opcode = 11
+        opcode = 9
+        rd = registers[args[1]]
         rs1 = 0
-        rd = registers[args[1]]
-        if args[2][:2] in ["0x", "0d", "0b"]:
-            imm = convert_to_int(args[2])
-        else:
-            rs2 = registers[args[2]]
+        rs2 = registers[args[2]]
+        imm = 0
 
-    elif (args[0] == "st"):
+
+    elif (args[0] == "tset"):
+        if (len(args) != 5):
+           return 0, 0, 0, 0, 0
+        opcode = 10
+        rd = registers[args[1]]
+        rs1 = registers[args[2]]
+        rs2 = registers[args[3]]
+
+        if args[4] == 'lt':
+           imm = 1
+        elif args[4] == 'lteq':
+           imm = 2
+        elif args[4] == 'eq':
+           imm = 4
+        elif args[4] == 'gtreq':
+           imm = 8
+        elif args[4] == 'gtr':
+           imm = 16
+        else:
+           imm = 0
+
+    elif (args[0] == "mvflg"): #if imm = 0 then move flags to GPR, else flags move to GPR
         if (len(args) != 3):
             return 0, 0, 0, 0, 0
         opcode = 11
-        rs1 = 1
+
+        #if args[2][:2] in ["0x", "0d", "0b"]:
+        imm = convert_to_int(args[2])
+
+        if imm == 0:
+            rd = 0
+            rs1 = registers[args[1]]
+            rs2 = 0
+        elif imm == 1:
+            rd = registers[args[1]]
+            rs1 = 0
+            rs2 = 0
+            imm = 1
+
+
+    elif (args[0] == "push"):
+        if (len(args) != 2):
+            return 0, 0, 0, 0, 0
+        opcode = 12
+        rd = 0
+        rs1 = registers[args[1]]
+        rs2 = 0
+        imm = 0
+
+
+    elif (args[0] == "pop"):
+        if (len(args) != 2):
+            return 0, 0, 0, 0, 0
+        opcode = 12
         rd = registers[args[1]]
+        rs1 = 0
+        rs2 = 0
+        imm = 1
+
+    elif (args[0] == "lw"):   #load word rs2 msb must = 1, , if imm then bit 2, 1, 0 of rs2, and all 8 bits of IMM field are used
+        if (len(args) != 3):
+            return 0, 0, 0, 0, 0
+        opcode = 13
+        # example) lw s0, 0x7ff(max value) s0 <=ram[0x7ff]
+        rd = registers[args[1]]  # s1 in the example
 
         if args[2][:2] in ["0x", "0d", "0b"]:
+            rs1 = 0
             imm = convert_to_int(args[2])
+            rs2 = (imm >> 8) & 0x07  # bit 3 = 1, grab bits [10:8] from imm
+            rs2 += 8
+            imm = imm & 0xff #imm get low 8 bits[7:0] convert imm to 8 bits
+        # example) lw s1, s0    s1 <= ram[s0[]]
         else:
-            rs2 = registers[args[2]]
+
+            rs1 = registers[args[2]] #s2 in the example
+            rs2 = 8 # bit 3 = 1
+            imm = 0 # no imm
+
+
+    elif (args[0] == "sw"):  #store word basically the same as lw but msb of rs2 = 0
+        if (len(args) != 3):
+            return 0, 0, 0, 0, 0
+        opcode = 13
+        rd = registers[args[1]]
+        #example
+        if args[2][:2] in ["0x", "0d", "0b"]:
+            rs1 = 0
+            imm = convert_to_int(args[2])
+            rs2 = (imm >> 8) & 0x07  # bit 3 = 0, grab bits [10:8] from imm
+            imm = imm & 0xff #imm get low 8 bits[7:0] convert imm to 8 bits
+        # example) lw s1, s0    s1 <= ram[s0[]]
+        else:
+            rs1 = registers[args[2]] #s2 in the example
+            rs2 = 0 # bit 3 = 1
+            imm = 0 # no imm
+
+    elif (args[0] == "jmp")
+        opcode = 14
+
+
+
+jmp
+
+jal
+jalr
+
+
+
+
+
     else:
       # It's a comment, not an instruction
-      return None, None, asm
+      return '', [] , asm
 #-----------------------------------------------------------------------------------------------------#
     #else:
     #    return 0,0,0,0,0
@@ -463,12 +377,13 @@ with open(output_filename, 'w') as output_file:
   output_buffer = []
 
   for line in asm_code:
+
       instructions, instuctions_list, asm = asmtoint(line)
 
       lst = asm
 
       if instuctions_list:
-        lst = asm + ' -> ' + ' '.join(instuctions_list) + ' -> ' + ''.join(instuctions_list)
+        lst = asm + '\t -> ' + ' '.join(instuctions_list) + '\t -> ' + ''.join(instuctions_list)
 
       if output_format == 'bin' and instructions:
         output_buffer.append(instructions)
@@ -478,7 +393,7 @@ with open(output_filename, 'w') as output_file:
   string_buffer = '\n'.join(output_buffer)
   
   output_file.write(string_buffer)
-  print string_buffer
+  #print string_buffer
 
 
 #------------------------------------------------------------------------------------------------------#
